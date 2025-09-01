@@ -1,0 +1,206 @@
+<diagram program="umletino" version="15.1"><zoom_level>8</zoom_level><help_text>«Class»
+Activity
+--
+- activityId: int
+- userId: int
+- description: String
+- timestamp: Timestamp
+--
++ logActivity(userId: int, description: String): void
++ getActivitiesForUser(userId: int): List&lt;Activity&gt;</help_text><element><id>UMLClass</id><coordinates><x>1872</x><y>1296</y><w>192</w><h>224</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+USER
+--
+-userID: int
+- name: str
+- email: str
+- phone: str
+- address: str
+- createdAt: datetime
+- rating: str
+- paymentMethod: str
+
+--
++ updateProfile()
++ deleteAccount()
++ login()
++ logout()</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1888</x><y>1512</y><w>88</w><h>104</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>90;10;10;110</additional_attributes></element><element><id>UMLClass</id><coordinates><x>1816</x><y>1600</y><w>160</w><h>104</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+CUSTOMER
+--
+-role: customer
+--
++ createBooking()
++ updateBookingStatus()
++ makeReview()
++ sendMessage()</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1992</x><y>1600</y><w>160</w><h>104</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+SOLE-TRADER
+--
+-role: sole-trader
+--
++ acceptBooking()
++ makeReview()
++ sendMessage()</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1968</x><y>1512</y><w>120</w><h>104</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;130;110</additional_attributes></element><element><id>UMLClass</id><coordinates><x>1792</x><y>1768</y><w>192</w><h>144</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+TICKET
+--
+- ticketID: int
+- customerID: int
+- soleTraderID: int
+- title: str
+- description: str
+- images: base64 str
+- date: datetime
+- serviceType: str</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2216</x><y>1464</y><w>192</w><h>112</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+MESSAGES
+--
+- messageID: int
+- senderID: int
+- recieverID: int
+- payload: str
+- timestamp: datetime
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2216</x><y>1288</y><w>192</w><h>112</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+RATING
+--
+- ratingID: int
+- senderID: int
+- recieverID: int
+- rating: str
+- timestamp: datetime
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1880</x><y>1696</y><w>48</w><h>88</h></coordinates><panel_attributes>lt=&lt;-
+m1=*
+m2=1
+Makes</panel_attributes><additional_attributes>10;90;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>2056</x><y>1408</y><w>176</w><h>128</h></coordinates><panel_attributes>lt=&lt;-
+m1=*
+m2=1
+Send/Recieve</panel_attributes><additional_attributes>200;140;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>2056</x><y>1336</y><w>176</w><h>96</h></coordinates><panel_attributes>lt=&lt;-
+m1=*
+m2=1
+Has/Creates</panel_attributes><additional_attributes>200;10;10;100</additional_attributes></element><element><id>UMLNote</id><coordinates><x>2264</x><y>1712</y><w>320</w><h>112</h></coordinates><panel_attributes>Note..
+bg=blue
+
+Using a marketplace approach, a customer will create a listing
+(ticket) with details of the job they need completed. This will be 
+sent to sole-traders that offer that service and they can message
+the customer in the app. Once the customer and sole-trader
+accepts the listing (by clicking a button), it will be marked
+from 'pending' to 'approved'.</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>464</x><y>56</y><w>464</w><h>168</h></coordinates><panel_attributes>«Class»
+User
+--
+- userId: int
+- email: String
+- firstName: String
+- lastName: String
+- password: String
+- createdAt: Timestamp
+--
++ login(email: String, password: String): User
++ validate(email: String): User
++ register(firstName: String, lastName: String, email: String, password: String, role: String): User</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1256</x><y>816</y><w>344</w><h>200</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+Listing
+--
+- listingId: int
+- customerId: int
+- title: String
+- description: Text
+- serviceRequired: String
+- status: String
+- location: String
+- createdAt: Timestamp
+--
++ getActiveListingsForServiceType(serviceType: String): List&lt;Listing&gt;
++ getListingsForCustomer(customerId: Integer): List&lt;Listing&gt;
++ getAllListings(): List&lt;Listing&gt;</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1760</x><y>680</y><w>312</w><h>240</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+Quote
+--
+- quoteId: int
+- listingId: int
+- soleTraderId: int
+- customerId: int
+- description: Text
+- price: Decimal
+- date: Date
+- status: String
+- createdAt: Timestamp
+--
++ getAllQuotesPerUserId(userId: Integer): List&lt;Quote&gt;
++ getQuotesForCustomer(customerId: Integer): List&lt;Quote&gt;
++ getQuote(quoteId: Integer): Quote
++ acceptQuoteAndCompleteListing(quoteId: Integer): void
++ rejectQuote(quoteId: Integer): void
++ getAllQuotes(): List&lt;Quote&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2168</x><y>680</y><w>440</w><h>168</h></coordinates><panel_attributes>&lt;&lt;Class&gt;&gt;
+Rating
+--
+- ratingId: int
+- quoteId: int
+- customerId: int
+- soleTraderId: int
+- rating: int
+- comment: Text
+- createdAt: Timestamp
+--
++ rateUser(userTo: Integer, rating: Integer, userFrom: Integer, description: String): void
++ getRatingsForUser(userId: Integer): List&lt;Rating&gt;</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>432</x><y>560</y><w>344</w><h>200</h></coordinates><panel_attributes>«Class»
+Job
+--
+- jobId: int
+- customerId: int
+- businessId: int
+- title: String
+- description: Text
+- service: String
+- amount: Decimal
+- status: String
+- location: String
+- createdAt: Timestamp
+--
++ getJobs(context: UserContext, status: String): List&lt;Job&gt;
++ createJob(jobData: Map, context: UserContext): Job
++ acceptJob(jobId: int, businessId: int): void
++ updateJobStatus(jobId: int, status: String): void
++ getAllJobs(): List&lt;Job&gt;</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>48</x><y>312</y><w>264</w><h>136</h></coordinates><panel_attributes>«Class»
+Activity
+--
+- activityId: int
+- userId: int
+- description: String
+- timestamp: Timestamp
+--
++ logActivity(userId: int, description: String): void
++ getActivitiesForUser(userId: int): List&lt;Activity&gt;</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>416</x><y>336</y><w>176</w><h>96</h></coordinates><panel_attributes>«Class»
+Customer
+--
+- role: "Customer"
+-- 
++ getCustomerJobs(): List&lt;Jobs&gt;
++ rateBusinessUser(userId: int)
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>600</x><y>336</y><w>176</w><h>96</h></coordinates><panel_attributes>«Class»
+Business
+--
+- role: "Business"
+-- 
++ getUnassignedJobs(): List&lt;Jobs&gt;
++ getAssignedJobs(): List&lt;Jobs&gt;
++ getCompletedJobs(): List&lt;Jobs&gt;
++ rateCustomerUser(userId: int)
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>784</x><y>336</y><w>176</w><h>96</h></coordinates><panel_attributes>«Class»
+Admin
+--
+- role: "Admin"
+-- 
++ getAllJobs(): List&lt;Jobs&gt;
++ getAllUsers(): List&lt;Users&gt;
++ getAllActivities(): List&lt;Activity&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>680</x><y>216</y><w>24</w><h>136</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;150</additional_attributes></element><element><id>Relation</id><coordinates><x>496</x><y>216</y><w>192</w><h>136</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>220;10;10;150</additional_attributes></element><element><id>Relation</id><coordinates><x>696</x><y>216</y><w>192</w><h>136</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;220;150</additional_attributes></element><element><id>Relation</id><coordinates><x>680</x><y>424</y><w>72</w><h>152</h></coordinates><panel_attributes>lt=-
+m1=1
+m2=0..*
+Updates v</panel_attributes><additional_attributes>10;10;10;170</additional_attributes></element><element><id>Relation</id><coordinates><x>496</x><y>424</y><w>72</w><h>152</h></coordinates><panel_attributes>lt=-
+m1=1
+m2=0..*
+Creates v</panel_attributes><additional_attributes>10;10;10;170</additional_attributes></element><element><id>Relation</id><coordinates><x>168</x><y>128</y><w>312</w><h>200</h></coordinates><panel_attributes>lt=-
+m1=0..n
+m2=1
+&lt; Triggers</panel_attributes><additional_attributes>10;230;370;10</additional_attributes></element><element><id>Relation</id><coordinates><x>160</x><y>440</y><w>288</w><h>240</h></coordinates><panel_attributes>lt=-
+m1=0..n
+m2=1
+&lt; Triggers</panel_attributes><additional_attributes>10;10;340;280</additional_attributes></element></diagram>
