@@ -1,12 +1,12 @@
-package csci318.demo;
+package app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ClientApiApplication {
+public class Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(ClientApiApplication.class, args);
+        SpringApplication.run(Application.class, args);
     }
 }

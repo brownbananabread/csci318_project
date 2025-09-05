@@ -1,25 +1,26 @@
-package csci318.demo;
+package app;
 
-import csci318.demo.model.User;
-import csci318.demo.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import app.model.UserEntity;
+import app.repository.UserRepository;
+
 @SpringBootApplication
-public class UserApiApplication {
+public class Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(UserApiApplication.class, args);
+        SpringApplication.run(Application.class, args);
     }
 
     @Bean
     public CommandLineRunner loadDatabase(UserRepository userRepository) {
         return args -> {
-            User user1 = new User("John Doe", "john.doe@example.com", "password123");
-            User user2 = new User("Jane Smith", "jane.smith@example.com", "password456");
-            User user3 = new User("Bob Johnson", "bob.johnson@example.com", "password789");
+            UserEntity user1 = new UserEntity("John Doe", "john.doe@example.com", "password123");
+            UserEntity user2 = new UserEntity("Jane Smith", "jane.smith@example.com", "password456");
+            UserEntity user3 = new UserEntity("Bob Johnson", "bob.johnson@example.com", "password789");
             
             userRepository.save(user1);
             userRepository.save(user2);

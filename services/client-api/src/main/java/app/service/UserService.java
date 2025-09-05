@@ -1,24 +1,25 @@
-package csci318.demo.service;
+package app.service;
 
-import csci318.demo.model.User;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import app.model.UserDto;
+
 import java.util.Map;
 
 @Service
-public class UserApiService {
+public class UserService {
 
     private final WebClient userApiWebClient;
 
-    public UserApiService() {
+    public UserService() {
         this.userApiWebClient = WebClient.builder()
                 .baseUrl("http://localhost:8081")
                 .build();
     }
 
-    public String signup(User user) {
+    public String signup(UserDto user) {
         Map<String, Boolean> existsResponse = userApiWebClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/user")
                         .queryParam("email", user.getEmail())
@@ -28,7 +29,7 @@ public class UserApiService {
                 .block();
 
         if (existsResponse != null && existsResponse.get("exists")) {
-            throw new RuntimeException("User with that email already exists");
+            throw new RuntimeException("UserDto with that email already exists");
         }
 
         String userId = userApiWebClient.post()
@@ -41,7 +42,7 @@ public class UserApiService {
         return userId;
     }
 
-    public String login(User user) {
+    public String login(UserDto user) {
         String userId = userApiWebClient.post()
                 .uri("/login")
                 .bodyValue(Map.of("email", user.getEmail(), "password", user.getPassword()))
@@ -52,7 +53,7 @@ public class UserApiService {
         return userId;
     }
 
-    public void updateAccount(String token, User user) {
+    public void updateAccount(String token, UserDto user) {
         String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
         userApiWebClient.put()
                 .uri("/user")
@@ -73,13 +74,13 @@ public class UserApiService {
                 .block();
     }
 
-    public User getAccount(String token) {
+    public UserDto getAccount(String token) {
         String actualToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        User user = userApiWebClient.get()
+        UserDto user = userApiWebClient.get()
                 .uri("/user")
                 .header("Authorization", actualToken)
                 .retrieve()
-                .bodyToMono(User.class)
+                .bodyToMono(UserDto.class)
                 .block();
 
         return user;

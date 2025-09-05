@@ -1,37 +1,44 @@
-package csci318.demo.controller;
+package app.controller;
 
-import csci318.demo.model.User;
-import csci318.demo.service.UserApiService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import app.model.UserDto;
+import app.service.UserService;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-public class UsersController {
+public class UserController {
 
-    private final UserApiService userApiService;
+    private final UserService userService;
 
-    public UsersController(UserApiService userApiService) {
-        this.userApiService = userApiService;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody User user) {
+    public ResponseEntity<?> signup(@RequestBody UserDto user) {
         try {
-            String userId = userApiService.signup(user);
-            return ResponseEntity.status(201).body(Map.of("userId", userId));
+            String userId = userService.signup(user);
+            return ResponseEntity.status(201).body(Map.of("accessToken", userId));
+        } catch (WebClientResponseException e) {
+            String errorMessage = e.getResponseBodyAsString();
+            if (errorMessage.isEmpty()) {
+                errorMessage = e.getStatusCode().toString() + " " + e.getStatusText() + " from POST http://localhost:8081/user";
+            }
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", errorMessage));
         } catch (RuntimeException e) {
             return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
         }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody UserDto user) {
         try {
-            String userId = userApiService.login(user);
+            String userId = userService.login(user);
             return ResponseEntity.ok(Map.of("accessToken", userId));
         } catch (WebClientResponseException e) {
             if (e.getStatusCode().is5xxServerError()) {
@@ -42,12 +49,12 @@ public class UsersController {
     }
 
     @PutMapping("/update-account")
-    public ResponseEntity<?> updateAccount(@RequestHeader(value = "Authorization", required = false) String token, @RequestBody User user) {
+    public ResponseEntity<?> updateAccount(@RequestHeader(value = "Authorization", required = false) String token, @RequestBody UserDto user) {
         if (token == null || token.trim().isEmpty()) {
             return ResponseEntity.status(401).body(Map.of("error", "User must first login to update account"));
         }
         try {
-            userApiService.updateAccount(token, user);
+            userService.updateAccount(token, user);
             return ResponseEntity.ok(Map.of("message", "Account updated successfully"));
         } catch (WebClientResponseException e) {
             if (e.getStatusCode().is4xxClientError()) {
@@ -63,7 +70,7 @@ public class UsersController {
             return ResponseEntity.status(401).body(Map.of("error", "User must first login to remove account"));
         }
         try {
-            userApiService.removeAccount(token);
+            userService.removeAccount(token);
             return ResponseEntity.ok(Map.of("message", "Account removed successfully"));
         } catch (WebClientResponseException e) {
             if (e.getStatusCode().is4xxClientError()) {
@@ -79,7 +86,7 @@ public class UsersController {
             return ResponseEntity.status(401).body(Map.of("error", "User must first login to view account details"));
         }
         try {
-            User user = userApiService.getAccount(token);
+            UserDto user = userService.getAccount(token);
             return ResponseEntity.ok(user);
         } catch (WebClientResponseException e) {
             if (e.getStatusCode().is4xxClientError()) {
