@@ -17,9 +17,9 @@ public class UserApiApplication {
     @Bean
     public CommandLineRunner loadDatabase(UserRepository userRepository) {
         return args -> {
-            User user1 = new User("John Doe", "john.doe@example.com");
-            User user2 = new User("Jane Smith", "jane.smith@example.com");
-            User user3 = new User("Bob Johnson", "bob.johnson@example.com");
+            User user1 = new User("John Doe", "john.doe@example.com", "password123");
+            User user2 = new User("Jane Smith", "jane.smith@example.com", "password456");
+            User user3 = new User("Bob Johnson", "bob.johnson@example.com", "password789");
             
             userRepository.save(user1);
             userRepository.save(user2);
