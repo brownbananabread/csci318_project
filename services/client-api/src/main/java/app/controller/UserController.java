@@ -2,12 +2,14 @@ package app.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.http.HttpStatus;
 
+import app.exception.ServiceException;
 import app.model.UserDto;
 import app.service.UserService;
 
 import java.util.Map;
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -21,78 +23,116 @@ public class UserController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody UserDto user) {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        String path = "/api/v1/signup";
+        
         try {
             String userId = userService.signup(user);
-            return ResponseEntity.status(201).body(Map.of("accessToken", userId));
-        } catch (WebClientResponseException e) {
-            String errorMessage = e.getResponseBodyAsString();
-            if (errorMessage.isEmpty()) {
-                errorMessage = e.getStatusCode().toString() + " " + e.getStatusText() + " from POST http://localhost:8081/user";
-            }
-            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", errorMessage));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "timestamp", timestamp,
+                "status", 201,
+                "data", Map.of("accessToken", userId),
+                "path", path
+            ));
+        } catch (ServiceException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of(
+                "timestamp", timestamp,
+                "status", e.getStatus().value(),
+                "error", e.getMessage(),
+                "path", path
+            ));
         }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserDto user) {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        String path = "/api/v1/login";
+        
         try {
             String userId = userService.login(user);
-            return ResponseEntity.ok(Map.of("accessToken", userId));
-        } catch (WebClientResponseException e) {
-            if (e.getStatusCode().is5xxServerError()) {
-                return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
-            }
-            return ResponseEntity.status(400).body(Map.of("error", "Login failed"));
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "timestamp", timestamp,
+                "status", 200,
+                "data", Map.of("accessToken", userId),
+                "path", path
+            ));
+        } catch (ServiceException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of(
+                "timestamp", timestamp,
+                "status", e.getStatus().value(),
+                "error", e.getMessage(),
+                "path", path
+            ));
         }
     }
 
-    @PutMapping("/update-account")
-    public ResponseEntity<?> updateAccount(@RequestHeader(value = "Authorization", required = false) String token, @RequestBody UserDto user) {
-        if (token == null || token.trim().isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "User must first login to update account"));
-        }
+    @PatchMapping("/update-account")
+    public ResponseEntity<?> updateAccount(@RequestHeader(value = "Authorization", required = true) String token, @RequestBody UserDto user) {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        String path = "/api/v1/update-account";
+        
         try {
             userService.updateAccount(token, user);
-            return ResponseEntity.ok(Map.of("message", "Account updated successfully"));
-        } catch (WebClientResponseException e) {
-            if (e.getStatusCode().is4xxClientError()) {
-                return ResponseEntity.status(404).body(Map.of("error", "User not found or invalid token"));
-            }
-            return ResponseEntity.status(500).body(Map.of("error", "Failed to update account"));
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "timestamp", timestamp,
+                "status", 200,
+                "message", "Account updated successfully",
+                "path", path
+            ));
+        } catch (ServiceException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of(
+                "timestamp", timestamp,
+                "status", e.getStatus().value(),
+                "error", e.getMessage(),
+                "path", path
+            ));
         }
     }
 
-    @DeleteMapping("/remove-account")
-    public ResponseEntity<?> removeAccount(@RequestHeader(value = "Authorization", required = false) String token) {
-        if (token == null || token.trim().isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "User must first login to remove account"));
-        }
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<?> removeAccount(@RequestHeader(value = "Authorization", required = true) String token) {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        String path = "/api/v1/delete-account";
+
         try {
             userService.removeAccount(token);
-            return ResponseEntity.ok(Map.of("message", "Account removed successfully"));
-        } catch (WebClientResponseException e) {
-            if (e.getStatusCode().is4xxClientError()) {
-                return ResponseEntity.status(404).body(Map.of("error", "User not found or invalid token"));
-            }
-            return ResponseEntity.status(500).body(Map.of("error", "Failed to remove account"));
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "timestamp", timestamp,
+                "status", 200,
+                "message", "Account deleted successfully",
+                "path", path
+            ));
+        } catch (ServiceException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of(
+                "timestamp", timestamp,
+                "status", e.getStatus().value(),
+                "error", e.getMessage(),
+                "path", path
+            ));
         }
     }
 
     @GetMapping("/account")
-    public ResponseEntity<?> getAccount(@RequestHeader(value = "Authorization", required = false) String token) {
-        if (token == null || token.trim().isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "User must first login to view account details"));
-        }
+    public ResponseEntity<?> getAccount(@RequestHeader(value = "Authorization", required = true) String accessToken) {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        String path = "/api/v1/account";
+        
         try {
-            UserDto user = userService.getAccount(token);
-            return ResponseEntity.ok(user);
-        } catch (WebClientResponseException e) {
-            if (e.getStatusCode().is4xxClientError()) {
-                return ResponseEntity.status(404).body(Map.of("error", "User not found or invalid token"));
-            }
-            return ResponseEntity.status(500).body(Map.of("error", "Failed to get account"));
+            UserDto userObject = userService.getAccount(accessToken);
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "timestamp", timestamp,
+                "status", 200,
+                "data", userObject,
+                "path", path
+            ));
+        } catch (ServiceException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of(
+                "timestamp", timestamp,
+                "status", e.getStatus().value(),
+                "error", e.getMessage(),
+                "path", path
+            ));
         }
     }
 }

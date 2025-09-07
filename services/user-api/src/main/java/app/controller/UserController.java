@@ -64,7 +64,7 @@ public class UserController {
         return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
 
-    @PutMapping("/user")
+    @PatchMapping("/user")
     public ResponseEntity<?> updateUserEntity(@RequestHeader("Authorization") String token, 
                                          @RequestBody UserEntity updatedUserEntity) {
         try {
@@ -73,11 +73,17 @@ public class UserController {
             
             if (existingUserEntity.isPresent()) {
                 UserEntity user = existingUserEntity.get();
-                user.setName(updatedUserEntity.getName());
-                user.setEmail(updatedUserEntity.getEmail());
-                if (updatedUserEntity.getPassword() != null) {
+                
+                if (updatedUserEntity.getName() != null && !updatedUserEntity.getName().trim().isEmpty()) {
+                    user.setName(updatedUserEntity.getName());
+                }
+                if (updatedUserEntity.getEmail() != null && !updatedUserEntity.getEmail().trim().isEmpty()) {
+                    user.setEmail(updatedUserEntity.getEmail());
+                }
+                if (updatedUserEntity.getPassword() != null && !updatedUserEntity.getPassword().trim().isEmpty()) {
                     user.setPassword(updatedUserEntity.getPassword());
                 }
+                
                 userRepository.save(user);
                 return ResponseEntity.ok(Map.of("message", "UserEntity updated successfully"));
             }
