@@ -18,16 +18,17 @@ Acts as an API gateway that provides user management endpoints and communicates 
 - `POST /api/v1/signup` - User registration
 - `POST /api/v1/login` - User authentication  
 - `GET /api/v1/account` - Get user account details (requires Authorization header)
-- `PUT /api/v1/update-account` - Update user account (requires Authorization header)
-- `DELETE /api/v1/remove-account` - Delete user account (requires Authorization header)
+- `PATCH /api/v1/update-account` - Update user account (requires Authorization header)
+- `DELETE /api/v1/delete-account` - Delete user account (requires Authorization header)
 
 **Response Format:**
-All endpoints return a standardized `ApiResponse` with:
+Responses contain either `error`, `message`, `data`, or `message` and `data`:
 ```json
 {
-  "datetime": "2025-09-05T18:30:00",
-  "message": "User ID or message text",
-  "status": "success|error"
+  "timestamp": "2025-09-07T10:30:00+00:00",
+  "status": 201,
+  "data": {"accessToken": "123"},
+  "path": "/api/v1/signup"
 }
 ```
 
@@ -38,7 +39,7 @@ Core service that manages user data and provides CRUD operations.
 - `GET /user?email=example@email.com` - Check if user exists
 - `GET /user` (with Authorization header) - Get user details by ID
 - `POST /user` - Create new user
-- `PUT /user` (with Authorization header) - Update user
+- `PATCH /user` (with Authorization header) - Update user
 - `DELETE /user` (with Authorization header) - Delete user
 - `POST /login` - Authenticate user
 
