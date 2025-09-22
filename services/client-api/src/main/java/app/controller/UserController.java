@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import app.exception.ServiceException;
 import app.model.UserDto;
 import app.service.UserService;
+import app.service.ActivityService;
 
 import java.util.Map;
 import java.time.OffsetDateTime;
@@ -16,9 +17,11 @@ import java.time.OffsetDateTime;
 public class UserController {
 
     private final UserService userService;
+    private final ActivityService activityService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, ActivityService activityService) {
         this.userService = userService;
+        this.activityService = activityService;
     }
 
     @PostMapping("/signup")
@@ -28,6 +31,7 @@ public class UserController {
         
         try {
             String userId = userService.signup(user);
+            activityService.logActivity(userId, "USER_SIGNUP", "User signed up successfully", "/api/v1/signup");
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "timestamp", timestamp,
                 "status", 201,
@@ -35,6 +39,7 @@ public class UserController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity("unknown", "USER_SIGNUP_FAILED", "User signup failed: " + e.getMessage(), "/api/v1/signup");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -51,6 +56,7 @@ public class UserController {
         
         try {
             String userId = userService.login(user);
+            activityService.logActivity(userId, "USER_LOGIN", "User logged in successfully", "/api/v1/login");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -58,6 +64,7 @@ public class UserController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity("unknown", "USER_LOGIN_FAILED", "User login failed: " + e.getMessage(), "/api/v1/login");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -74,6 +81,7 @@ public class UserController {
         
         try {
             userService.updateAccount(token, user);
+            activityService.logActivity(token, "USER_UPDATE", "User account updated successfully", "/api/v1/update-account");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -81,6 +89,7 @@ public class UserController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "USER_UPDATE_FAILED", "User account update failed: " + e.getMessage(), "/api/v1/update-account");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -97,6 +106,7 @@ public class UserController {
 
         try {
             userService.removeAccount(token);
+            activityService.logActivity(token, "USER_DELETE", "User account deleted successfully", "/api/v1/delete-account");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -104,6 +114,7 @@ public class UserController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "USER_DELETE_FAILED", "User account deletion failed: " + e.getMessage(), "/api/v1/delete-account");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -120,6 +131,7 @@ public class UserController {
         
         try {
             UserDto userObject = userService.getAccount(accessToken);
+            activityService.logActivity(accessToken, "USER_PROFILE_VIEW", "User viewed their profile", "/api/v1/account");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -127,6 +139,7 @@ public class UserController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(accessToken, "USER_PROFILE_VIEW_FAILED", "User profile view failed: " + e.getMessage(), "/api/v1/account");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),

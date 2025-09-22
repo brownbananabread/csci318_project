@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import app.exception.ServiceException;
 import app.model.EventDto;
 import app.service.EventService;
+import app.service.ActivityService;
 
 import java.util.Map;
 import java.util.List;
@@ -17,9 +18,11 @@ import java.time.OffsetDateTime;
 public class EventController {
 
     private final EventService eventService;
+    private final ActivityService activityService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, ActivityService activityService) {
         this.eventService = eventService;
+        this.activityService = activityService;
     }
 
     @GetMapping("/events")
@@ -29,6 +32,7 @@ public class EventController {
 
         try {
             List<EventDto> events = eventService.getAllEvents();
+            activityService.logActivity("anonymous", "EVENTS_VIEW_ALL", "User viewed all events", "/api/v1/events");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -36,6 +40,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity("anonymous", "EVENTS_VIEW_ALL_FAILED", "Failed to view all events: " + e.getMessage(), "/api/v1/events");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -52,6 +57,7 @@ public class EventController {
 
         try {
             EventDto event = eventService.getEvent(eventId);
+            activityService.logActivity("anonymous", "EVENT_VIEW", "User viewed event details", "/api/v1/events/" + eventId);
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -59,6 +65,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity("anonymous", "EVENT_VIEW_FAILED", "Failed to view event: " + e.getMessage(), "/api/v1/events/" + eventId);
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -75,6 +82,7 @@ public class EventController {
 
         try {
             String eventId = eventService.createEvent(token, event);
+            activityService.logActivity(token, "EVENT_CREATE", "User created a new event: " + event.getTitle(), "/api/v1/events");
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "timestamp", timestamp,
                 "status", 201,
@@ -82,6 +90,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "EVENT_CREATE_FAILED", "Event creation failed: " + e.getMessage(), "/api/v1/events");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -98,6 +107,7 @@ public class EventController {
 
         try {
             eventService.updateEvent(token, eventId, event);
+            activityService.logActivity(token, "EVENT_UPDATE", "User updated an event", "/api/v1/events/" + eventId);
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -105,6 +115,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "EVENT_UPDATE_FAILED", "Event update failed: " + e.getMessage(), "/api/v1/events/" + eventId);
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -121,6 +132,7 @@ public class EventController {
 
         try {
             eventService.deleteEvent(token, eventId);
+            activityService.logActivity(token, "EVENT_DELETE", "User deleted an event", "/api/v1/events/" + eventId);
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -128,6 +140,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "EVENT_DELETE_FAILED", "Event deletion failed: " + e.getMessage(), "/api/v1/events/" + eventId);
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -144,6 +157,7 @@ public class EventController {
 
         try {
             eventService.registerForEvent(token, eventId);
+            activityService.logActivity(token, "EVENT_REGISTER", "User registered for an event", "/api/v1/events/" + eventId + "/register");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -151,6 +165,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "EVENT_REGISTER_FAILED", "Event registration failed: " + e.getMessage(), "/api/v1/events/" + eventId + "/register");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -167,6 +182,7 @@ public class EventController {
 
         try {
             eventService.deregisterFromEvent(token, eventId);
+            activityService.logActivity(token, "EVENT_DEREGISTER", "User deregistered from an event", "/api/v1/events/" + eventId + "/register");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -174,6 +190,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "EVENT_DEREGISTER_FAILED", "Event deregistration failed: " + e.getMessage(), "/api/v1/events/" + eventId + "/register");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -190,6 +207,7 @@ public class EventController {
 
         try {
             List<EventDto> events = eventService.getUserEvents(token);
+            activityService.logActivity(token, "EVENTS_VIEW_MY", "User viewed their events", "/api/v1/events/my-events");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -197,6 +215,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "EVENTS_VIEW_MY_FAILED", "Failed to view user events: " + e.getMessage(), "/api/v1/events/my-events");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
@@ -213,6 +232,7 @@ public class EventController {
 
         try {
             List<EventDto> events = eventService.getRegisteredEvents(token);
+            activityService.logActivity(token, "EVENTS_VIEW_REGISTERED", "User viewed their registered events", "/api/v1/events/registered");
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "timestamp", timestamp,
                 "status", 200,
@@ -220,6 +240,7 @@ public class EventController {
                 "path", path
             ));
         } catch (ServiceException e) {
+            activityService.logActivity(token, "EVENTS_VIEW_REGISTERED_FAILED", "Failed to view registered events: " + e.getMessage(), "/api/v1/events/registered");
             return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "timestamp", timestamp,
                 "status", e.getStatus().value(),
