@@ -29,19 +29,9 @@ public class EventController {
 
         try {
             List<EventDto> events = eventService.getAllEvents();
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", events,
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).body(events);
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -52,19 +42,9 @@ public class EventController {
 
         try {
             EventDto event = eventService.getEvent(eventId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", event,
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).body(event);
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -75,19 +55,9 @@ public class EventController {
 
         try {
             String eventId = eventService.createEvent(userId, event);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "timestamp", timestamp,
-                "status", 201,
-                "data", Map.of("eventId", eventId),
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.CREATED).body(eventId);
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -98,19 +68,9 @@ public class EventController {
 
         try {
             eventService.updateEvent(userId, eventId, event);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Event updated successfully",
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).build();
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -121,19 +81,9 @@ public class EventController {
 
         try {
             eventService.deleteEvent(userId, eventId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Event deleted successfully",
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).build();
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -144,19 +94,9 @@ public class EventController {
 
         try {
             eventService.registerForEvent(userId, eventId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Successfully registered for event",
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).build();
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -167,19 +107,9 @@ public class EventController {
 
         try {
             eventService.deregisterFromEvent(userId, eventId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Successfully deregistered from event",
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).build();
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -190,19 +120,9 @@ public class EventController {
 
         try {
             List<EventDto> events = eventService.getUserEvents(userId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", events,
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).body(events);
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 
@@ -213,19 +133,9 @@ public class EventController {
 
         try {
             List<EventDto> events = eventService.getRegisteredEvents(userId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", events,
-                "path", path
-            ));
+            return ResponseEntity.status(HttpStatus.OK).body(events);
         } catch (ServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            return ResponseEntity.status(e.getStatus()).build();
         }
     }
 }

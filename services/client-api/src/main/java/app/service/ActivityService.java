@@ -4,10 +4,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.core.ParameterizedTypeReference;
 
 import app.utils.Fetch;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.time.OffsetDateTime;
@@ -55,33 +57,38 @@ public class ActivityService {
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getUserActivities(String userId) throws Exception {
         try {
-            Map<String, Object> response = webClient.get()
+            List<Map<String, Object>> allActivities = webClient.get()
                     .uri("/api/v1/activities")
                     .retrieve()
-                    .bodyToMono(Map.class)
+                    .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                     .block();
 
-            List<Map<String, Object>> allActivities = (List<Map<String, Object>>) response.get("data");
+            if (allActivities == null) {
+                return new ArrayList<>();
+            }
 
             // Filter activities for the specific user and parse the activity object
             String cleanUserId = Fetch.extractBearerToken(userId);
-            return allActivities.stream()
-                    .filter(activity -> cleanUserId.equals(activity.get("userId")))
-                    .map(activity -> {
-                        try {
-                            String activityObjectJson = (String) activity.get("activityObject");
-                            return objectMapper.readValue(activityObjectJson, Map.class);
-                        } catch (Exception e) {
-                            System.err.println("Failed to parse activity object: " + e.getMessage());
-                            return Map.of(
-                                "title", "Unknown",
-                                "description", "Failed to parse activity",
-                                "path", "/api/v1/unknown",
-                                "timestamp", java.time.OffsetDateTime.now()
-                            );
-                        }
-                    })
-                    .collect(java.util.stream.Collectors.toList());
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (Map<String, Object> activity : allActivities) {
+                if (cleanUserId.equals(activity.get("userId"))) {
+                    try {
+                        String activityObjectJson = (String) activity.get("activityObject");
+                        Map<String, Object> parsedActivity = objectMapper.readValue(activityObjectJson, Map.class);
+                        result.add(parsedActivity);
+                    } catch (Exception e) {
+                        System.err.println("Failed to parse activity object: " + e.getMessage());
+                        Map<String, Object> defaultActivity = Map.of(
+                            "title", "Unknown",
+                            "description", "Failed to parse activity",
+                            "path", "/api/v1/unknown",
+                            "timestamp", java.time.OffsetDateTime.now()
+                        );
+                        result.add(defaultActivity);
+                    }
+                }
+            }
+            return result;
         } catch (WebClientResponseException e) {
             throw new Exception(Fetch.extractErrorMessage(e));
         } catch (Exception e) {

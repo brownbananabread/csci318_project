@@ -1,6 +1,7 @@
 package app.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import app.model.UserEntity;
@@ -19,61 +20,65 @@ public class UserController {
     }
 
     @GetMapping("/user")
-    public ResponseEntity<?> getUserEntity(@RequestParam(required = false) String email, 
-                                   @RequestHeader(value = "Authorization", required = false) String token) {
-        if (email != null) {
-            boolean exists = userRepository.existsByEmail(email);
-            return ResponseEntity.ok(Map.of("exists", exists));
-        }
-        
-        if (token != null) {
-            try {
-                Long userId = Long.valueOf(token);
-                Optional<UserEntity> user = userRepository.findById(userId);
-                if (user.isPresent()) {
-                    return ResponseEntity.ok(user.get());
-                }
-                return ResponseEntity.status(404).body(Map.of("error", "UserEntity not found"));
-            } catch (NumberFormatException e) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid token format"));
+    public ResponseEntity<?> getUserEntity(@RequestParam(required = false) String email,
+                                           @RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            if (email != null) {
+                boolean exists = userRepository.existsByEmail(email);
+                return ResponseEntity.ok(Map.of("exists", exists));
             }
+            if (token != null) {
+                Long userId = Long.valueOf(token);
+                return userRepository.findById(userId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+            }
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
-        
-        return ResponseEntity.status(401).body(Map.of("error", "Authorization header is required to access user data"));
     }
 
     @PostMapping("/user")
-    public ResponseEntity<String> createUserEntity(@RequestBody UserEntity user) {
-        if (user.getName() == null || user.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Incomplete sign up form");
+    public ResponseEntity<?> createUserEntity(@RequestBody UserEntity user) {
+        try {
+            if (user.getName() == null || user.getName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            UserEntity savedUserEntity = userRepository.save(user);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedUserEntity.getId().toString());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        UserEntity savedUserEntity = userRepository.save(user);
-        return ResponseEntity.status(201).body(savedUserEntity.getId().toString());
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-        String email = credentials.get("email");
-        String password = credentials.get("password");
-        
-        Optional<UserEntity> user = userRepository.findByEmail(email);
-        if (user.isPresent() && user.get().getPassword().equals(password)) {
-            return ResponseEntity.ok(user.get().getId().toString());
+        try {
+            String email = credentials.get("email");
+            String password = credentials.get("password");
+
+            Optional<UserEntity> user = userRepository.findByEmail(email);
+            if (user.isPresent() && user.get().getPassword().equals(password)) {
+                return ResponseEntity.ok(user.get().getId().toString());
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
-        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
 
     @PatchMapping("/user")
-    public ResponseEntity<?> updateUserEntity(@RequestHeader("Authorization") String token, 
+    public ResponseEntity<?> updateUserEntity(@RequestHeader("Authorization") String token,
                                          @RequestBody UserEntity updatedUserEntity) {
         try {
             Long userId = Long.valueOf(token);
             Optional<UserEntity> existingUserEntity = userRepository.findById(userId);
-            
+
             if (existingUserEntity.isPresent()) {
                 UserEntity user = existingUserEntity.get();
-                
+
                 if (updatedUserEntity.getName() != null && !updatedUserEntity.getName().trim().isEmpty()) {
                     user.setName(updatedUserEntity.getName());
                 }
@@ -83,14 +88,14 @@ public class UserController {
                 if (updatedUserEntity.getPassword() != null && !updatedUserEntity.getPassword().trim().isEmpty()) {
                     user.setPassword(updatedUserEntity.getPassword());
                 }
-                
+
                 userRepository.save(user);
-                return ResponseEntity.ok(Map.of("message", "UserEntity updated successfully"));
+                return ResponseEntity.ok().build();
             }
-            
-            return ResponseEntity.status(404).body(Map.of("error", "UserEntity not found"));
+
+            return ResponseEntity.notFound().build();
         } catch (NumberFormatException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid token format"));
+            return ResponseEntity.badRequest().build();
         }
     }
 
@@ -100,12 +105,12 @@ public class UserController {
             Long userId = Long.valueOf(token);
             if (userRepository.existsById(userId)) {
                 userRepository.deleteById(userId);
-                return ResponseEntity.ok(Map.of("message", "UserEntity deleted successfully"));
+                return ResponseEntity.ok().build();
             }
-            
-            return ResponseEntity.status(404).body(Map.of("error", "UserEntity not found"));
+
+            return ResponseEntity.notFound().build();
         } catch (NumberFormatException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid token format"));
+            return ResponseEntity.badRequest().build();
         }
     }
 }

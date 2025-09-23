@@ -8,13 +8,13 @@ import app.exception.ServiceException;
 import app.model.EventDto;
 import app.service.EventService;
 import app.service.ActivityService;
+import app.utils.ResponseHelper;
 
 import java.util.Map;
 import java.util.List;
-import java.time.OffsetDateTime;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/events")
 public class EventController {
 
     private final EventService eventService;
@@ -25,228 +25,130 @@ public class EventController {
         this.activityService = activityService;
     }
 
-    @GetMapping("/events")
+    @GetMapping()
     public ResponseEntity<?> getAllEvents() {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events";
+        String path = "/events";
 
         try {
             List<EventDto> events = eventService.getAllEvents();
-            activityService.logActivity("anonymous", "EVENTS_VIEW_ALL", "User viewed all events", "/api/v1/events");
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", events,
-                "path", path
-            ));
+            activityService.logActivity("anonymous", "EVENTS_VIEW_ALL", "User viewed all events", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "Events retrieved successfully", events);
         } catch (ServiceException e) {
-            activityService.logActivity("anonymous", "EVENTS_VIEW_ALL_FAILED", "Failed to view all events: " + e.getMessage(), "/api/v1/events");
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity("anonymous", "EVENTS_VIEW_ALL_FAILED", "Failed to view all events: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(HttpStatus.INTERNAL_SERVER_ERROR, path, "Unable to retrieve events at this time. Please try again later.", List.of());
         }
     }
 
-    @GetMapping("/events/{eventId}")
+    @GetMapping("/{eventId}")
     public ResponseEntity<?> getEvent(@PathVariable String eventId) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events/" + eventId;
+        String path = "/events/" + eventId;
 
         try {
             EventDto event = eventService.getEvent(eventId);
-            activityService.logActivity("anonymous", "EVENT_VIEW", "User viewed event details", "/api/v1/events/" + eventId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", event,
-                "path", path
-            ));
+            activityService.logActivity("anonymous", "EVENT_VIEW", "User viewed event details", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "Event retrieved successfully", event);
         } catch (ServiceException e) {
-            activityService.logActivity("anonymous", "EVENT_VIEW_FAILED", "Failed to view event: " + e.getMessage(), "/api/v1/events/" + eventId);
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity("anonymous", "EVENT_VIEW_FAILED", "Failed to view event: " + e.getMessage(), path);
+            HttpStatus statusCode = e.getStatus() == HttpStatus.NOT_FOUND ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
+            String message = statusCode == HttpStatus.NOT_FOUND ? "Event not found." : "Unable to retrieve event at this time. Please try again later.";
+            return ResponseHelper.createResponse(statusCode, path, message, null);
         }
     }
 
-    @PostMapping("/events")
+    @PostMapping()
     public ResponseEntity<?> createEvent(@RequestHeader(value = "Authorization", required = true) String token, @RequestBody EventDto event) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events";
-
+        String path = "/events";
         try {
             String eventId = eventService.createEvent(token, event);
-            activityService.logActivity(token, "EVENT_CREATE", "User created a new event: " + event.getTitle(), "/api/v1/events");
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "timestamp", timestamp,
-                "status", 201,
-                "data", Map.of("eventId", eventId),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_CREATE", "User created a new event: " + event.getTitle(), path);
+            return ResponseHelper.createResponse(HttpStatus.CREATED, path, "Event created successfully", Map.of("eventId", eventId));
         } catch (ServiceException e) {
-            activityService.logActivity(token, "EVENT_CREATE_FAILED", "Event creation failed: " + e.getMessage(), "/api/v1/events");
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_CREATE_FAILED", "Event creation failed: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(e.getStatus(), path, "Unable to create event at this time. Please try again later.", null);
         }
     }
 
-    @PatchMapping("/events/{eventId}")
+    @PatchMapping("/{eventId}")
     public ResponseEntity<?> updateEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId, @RequestBody EventDto event) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events/" + eventId;
+        String path = "/events/" + eventId;
 
         try {
             eventService.updateEvent(token, eventId, event);
-            activityService.logActivity(token, "EVENT_UPDATE", "User updated an event", "/api/v1/events/" + eventId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Event updated successfully",
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_UPDATE", "User updated an event", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "Event updated successfully", null);
         } catch (ServiceException e) {
-            activityService.logActivity(token, "EVENT_UPDATE_FAILED", "Event update failed: " + e.getMessage(), "/api/v1/events/" + eventId);
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_UPDATE_FAILED", "Event update failed: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(e.getStatus(), path, "Unable to update event at this time. Please try again later.", null);
         }
     }
 
-    @DeleteMapping("/events/{eventId}")
+    @DeleteMapping("/{eventId}")
     public ResponseEntity<?> deleteEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events/" + eventId;
+        String path = "/events/" + eventId;
 
         try {
             eventService.deleteEvent(token, eventId);
-            activityService.logActivity(token, "EVENT_DELETE", "User deleted an event", "/api/v1/events/" + eventId);
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Event deleted successfully",
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_DELETE", "User deleted an event", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "Event deleted successfully", null);
         } catch (ServiceException e) {
-            activityService.logActivity(token, "EVENT_DELETE_FAILED", "Event deletion failed: " + e.getMessage(), "/api/v1/events/" + eventId);
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_DELETE_FAILED", "Event deletion failed: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(e.getStatus(), path, "Unable to delete event at this time. Please try again later.", null);
         }
     }
 
-    @PostMapping("/events/{eventId}/register")
+    @PostMapping("/{eventId}/register")
     public ResponseEntity<?> registerForEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events/" + eventId + "/register";
+        String path = "/events/" + eventId + "/register";
 
         try {
             eventService.registerForEvent(token, eventId);
-            activityService.logActivity(token, "EVENT_REGISTER", "User registered for an event", "/api/v1/events/" + eventId + "/register");
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Successfully registered for event",
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_REGISTER", "User registered for an event", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "Successfully registered for event", null);
         } catch (ServiceException e) {
-            activityService.logActivity(token, "EVENT_REGISTER_FAILED", "Event registration failed: " + e.getMessage(), "/api/v1/events/" + eventId + "/register");
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_REGISTER_FAILED", "Event registration failed: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(e.getStatus(), path, "Unable to register for event at this time. Please try again later.", null);
         }
     }
 
-    @DeleteMapping("/events/{eventId}/register")
+    @DeleteMapping("/{eventId}/register")
     public ResponseEntity<?> deregisterFromEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events/" + eventId + "/register";
+        String path = "/events/" + eventId + "/register";
 
         try {
             eventService.deregisterFromEvent(token, eventId);
-            activityService.logActivity(token, "EVENT_DEREGISTER", "User deregistered from an event", "/api/v1/events/" + eventId + "/register");
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "message", "Successfully deregistered from event",
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_DEREGISTER", "User deregistered from an event", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "Successfully deregistered from event", null);
         } catch (ServiceException e) {
-            activityService.logActivity(token, "EVENT_DEREGISTER_FAILED", "Event deregistration failed: " + e.getMessage(), "/api/v1/events/" + eventId + "/register");
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENT_DEREGISTER_FAILED", "Event deregistration failed: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(e.getStatus(), path, "Unable to deregister from event at this time. Please try again later.", null);
         }
     }
 
-    @GetMapping("/events/my-events")
+    @GetMapping("/my-events")
     public ResponseEntity<?> getUserEvents(@RequestHeader(value = "Authorization", required = true) String token) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events/my-events";
+        String path = "/my-events";
 
         try {
             List<EventDto> events = eventService.getUserEvents(token);
-            activityService.logActivity(token, "EVENTS_VIEW_MY", "User viewed their events", "/api/v1/events/my-events");
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", events,
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENTS_VIEW_MY", "User viewed their events", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "User events retrieved successfully", events);
         } catch (ServiceException e) {
-            activityService.logActivity(token, "EVENTS_VIEW_MY_FAILED", "Failed to view user events: " + e.getMessage(), "/api/v1/events/my-events");
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENTS_VIEW_MY_FAILED", "Failed to view user events: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(HttpStatus.INTERNAL_SERVER_ERROR, path, "Unable to retrieve your events at this time. Please try again later.", List.of());
         }
     }
 
-    @GetMapping("/events/registered")
+    @GetMapping("/registered")
     public ResponseEntity<?> getRegisteredEvents(@RequestHeader(value = "Authorization", required = true) String token) {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        String path = "/api/v1/events/registered";
+        String path = "/registered";
 
         try {
             List<EventDto> events = eventService.getRegisteredEvents(token);
-            activityService.logActivity(token, "EVENTS_VIEW_REGISTERED", "User viewed their registered events", "/api/v1/events/registered");
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "timestamp", timestamp,
-                "status", 200,
-                "data", events,
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENTS_VIEW_REGISTERED", "User viewed their registered events", path);
+            return ResponseHelper.createResponse(HttpStatus.OK, path, "Registered events retrieved successfully", events);
         } catch (ServiceException e) {
-            activityService.logActivity(token, "EVENTS_VIEW_REGISTERED_FAILED", "Failed to view registered events: " + e.getMessage(), "/api/v1/events/registered");
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "timestamp", timestamp,
-                "status", e.getStatus().value(),
-                "error", e.getMessage(),
-                "path", path
-            ));
+            activityService.logActivity(token, "EVENTS_VIEW_REGISTERED_FAILED", "Failed to view registered events: " + e.getMessage(), path);
+            return ResponseHelper.createResponse(HttpStatus.INTERNAL_SERVER_ERROR, path, "Unable to retrieve registered events at this time. Please try again later.", List.of());
         }
     }
 }

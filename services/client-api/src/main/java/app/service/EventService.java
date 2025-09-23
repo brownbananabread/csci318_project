@@ -33,17 +33,16 @@ public class EventService {
 
     public List<EventDto> getAllEvents() {
         try {
-            Map<String, Object> response = eventApiWebClient.get()
+            List<Map<String, Object>> eventMaps = eventApiWebClient.get()
                     .uri("/api/v1/events")
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                     .block();
 
-            if (response == null || response.get("data") == null) {
+            if (eventMaps == null) {
                 throw new ServiceException("Failed to retrieve events", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            List<Map<String, Object>> eventMaps = (List<Map<String, Object>>) response.get("data");
             return eventMaps.stream()
                     .map(eventMap -> objectMapper.convertValue(eventMap, EventDto.class))
                     .toList();
@@ -55,17 +54,16 @@ public class EventService {
 
     public EventDto getEvent(String eventId) {
         try {
-            Map<String, Object> response = eventApiWebClient.get()
+            Map<String, Object> eventMap = eventApiWebClient.get()
                     .uri("/api/v1/events/{id}", eventId)
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                     .block();
 
-            if (response == null || response.get("data") == null) {
+            if (eventMap == null) {
                 throw new ServiceException("Event not found", HttpStatus.NOT_FOUND);
             }
 
-            Map<String, Object> eventMap = (Map<String, Object>) response.get("data");
             return objectMapper.convertValue(eventMap, EventDto.class);
         } catch (WebClientResponseException e) {
             String errorMessage = Fetch.extractErrorMessage(e);
@@ -79,20 +77,19 @@ public class EventService {
         UserDto user = validateUser(actualToken);
 
         try {
-            Map<String, Object> response = eventApiWebClient.post()
+            String eventId = eventApiWebClient.post()
                     .uri("/api/v1/events")
                     .header("Authorization", user.getId())
                     .bodyValue(event)
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(String.class)
                     .block();
 
-            if (response == null || response.get("data") == null) {
+            if (eventId == null) {
                 throw new ServiceException("Event creation failed", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            Map<String, Object> data = (Map<String, Object>) response.get("data");
-            return (String) data.get("eventId");
+            return eventId;
         } catch (WebClientResponseException e) {
             String errorMessage = Fetch.extractErrorMessage(e);
             throw new ServiceException(errorMessage, HttpStatus.valueOf(e.getStatusCode().value()));
@@ -178,18 +175,17 @@ public class EventService {
         UserDto user = validateUser(actualToken);
 
         try {
-            Map<String, Object> response = eventApiWebClient.get()
+            List<Map<String, Object>> eventMaps = eventApiWebClient.get()
                     .uri("/api/v1/events/my-events")
                     .header("Authorization", user.getId())
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                     .block();
 
-            if (response == null || response.get("data") == null) {
+            if (eventMaps == null) {
                 throw new ServiceException("Failed to retrieve user events", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            List<Map<String, Object>> eventMaps = (List<Map<String, Object>>) response.get("data");
             return eventMaps.stream()
                     .map(eventMap -> objectMapper.convertValue(eventMap, EventDto.class))
                     .toList();
@@ -205,18 +201,17 @@ public class EventService {
         UserDto user = validateUser(actualToken);
 
         try {
-            Map<String, Object> response = eventApiWebClient.get()
+            List<Map<String, Object>> eventMaps = eventApiWebClient.get()
                     .uri("/api/v1/events/registered")
                     .header("Authorization", user.getId())
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                     .block();
 
-            if (response == null || response.get("data") == null) {
+            if (eventMaps == null) {
                 throw new ServiceException("Failed to retrieve registered events", HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            List<Map<String, Object>> eventMaps = (List<Map<String, Object>>) response.get("data");
             return eventMaps.stream()
                     .map(eventMap -> objectMapper.convertValue(eventMap, EventDto.class))
                     .toList();
