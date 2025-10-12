@@ -11,9 +11,7 @@ activity:
 	cd services/activity-api && mvn spring-boot:run
 
 personalise:
-	cd services/personalise-api \
-	&& export GEMINI_API_KEY="AIzaSyDuIdBOxNtLkYC8RMZ_BC1N7q6tbWvIUyk" \
-	&& mvn spring-boot:run
+	cd services/personalise-api && mvn spring-boot:run
 
 db:
 	java -cp ~/.m2/repository/com/h2database/h2/2.2.224/h2-2.2.224.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /Users/jacobbrown/workspace/uni/csci318_project/database

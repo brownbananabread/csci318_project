@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 
 import app.exception.ServiceException;
 
-import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 
@@ -22,22 +22,17 @@ import java.util.List;
 public class PersonaliseService {
 
     private final RestTemplate restTemplate;
-    private final GoogleAiGeminiChatModel chatModel;
+    private final OllamaChatModel chatModel;
 
     private static final String CLIENT_API_BASE = "http://localhost:8080";
 
     public PersonaliseService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
 
-        // Initialize Gemini model - API key should be configured via environment variable
-        String apiKey = System.getenv("GEMINI_API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            throw new RuntimeException("GEMINI_API_KEY environment variable not set");
-        }
-
-        this.chatModel = GoogleAiGeminiChatModel.builder()
-                .apiKey(apiKey)
-                .modelName("gemini-1.5-flash")
+        // Initialize Ollama model - using local Ollama instance
+        this.chatModel = OllamaChatModel.builder()
+                .baseUrl("http://localhost:11434")
+                .modelName("llama3.1:8b")
                 .build();
     }
 
