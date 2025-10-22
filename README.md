@@ -1,99 +1,275 @@
-# CSCI318 Software Engineering Practices & Principles - Group Project
+# Event Management Microservices Platform
 
-## User Management Microservices
+A microservices-based event management system with Kafka event-driven architecture, real-time stream processing, and AI-powered personalization.
 
-This project implements a user management system using Spring Boot microservices architecture with two main services:
+---
 
-### Architecture
+## Installation
 
-- **Client API (Port 8080)** - Gateway service that handles client requests and forwards them to the User API
-- **User API (Port 8081)** - Core user management service with database operations
+### macOS
 
-### Services
+```bash
+# Install Java 21
+brew install openjdk@21
 
-#### Client API Service
-Acts as an API gateway that provides user management endpoints and communicates with the User API service.
+# Install Maven
+brew install maven
 
-**Endpoints:**
-- `POST /api/v1/signup` - User registration
-- `POST /api/v1/login` - User authentication  
-- `GET /api/v1/account` - Get user account details (requires Authorization header)
-- `PATCH /api/v1/update-account` - Update user account (requires Authorization header)
-- `DELETE /api/v1/delete-account` - Delete user account (requires Authorization header)
+# Install Kafka
+brew install kafka
 
-**Response Format:**
-Responses contain either `error`, `message`, `data`, or `message` and `data`:
-```json
-{
-  "timestamp": "2025-09-07T10:30:00+00:00",
-  "status": 201,
-  "data": {"accessToken": "123"},
-  "path": "/api/v1/signup"
-}
+# Install Ollama (for AI features)
+brew install ollama
+ollama pull llama3.1:8b
 ```
 
-#### User API Service  
-Core service that manages user data and provides CRUD operations.
+### Windows
 
-**Endpoints:**
-- `GET /user?email=example@email.com` - Check if user exists
-- `GET /user` (with Authorization header) - Get user details by ID
-- `POST /user` - Create new user
-- `PATCH /user` (with Authorization header) - Update user
-- `DELETE /user` (with Authorization header) - Delete user
-- `POST /login` - Authenticate user
+1. **Java 21**: Download from [Adoptium](https://adoptium.net/) and install
+2. **Maven**: Download from [Maven](https://maven.apache.org/download.cgi), extract to `C:\Program Files\Maven`, add to PATH
+3. **Kafka**: Download from [Apache Kafka](https://kafka.apache.org/downloads), extract to `C:\kafka`
+4. **Ollama**: Download from [Ollama](https://ollama.com/download/windows), install, then run `ollama pull llama3.1:8b`
 
-### Data Model
+---
 
-**User:**
-- `id` (Long) - Auto-generated primary key
-- `name` (String) - User's full name
-- `email` (String) - Unique email address
-- `password` (String) - User password
+## Running the Project
 
-### Authentication
+### 1. Start Kafka
 
-The system uses a simple token-based authentication where:
-- User ID serves as the bearer token for protected endpoints
-- Tokens are passed via the `Authorization` header
-- No expiration or complex JWT implementation
-
-### Usage Examples
-
-**Sign up a new user:**
+**macOS:**
 ```bash
-curl -X POST http://localhost:8080/api/v1/signup \
+brew services start zookeeper
+brew services start kafka
+```
+
+**Windows:**
+```cmd
+# Terminal 1 - Zookeeper
+cd C:\kafka
+bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+
+# Terminal 2 - Kafka
+cd C:\kafka
+bin\windows\kafka-server-start.bat config\server.properties
+```
+
+### 2. Create Kafka Topics
+
+**macOS:**
+```bash
+kafka-topics --create --topic user-created --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+kafka-topics --create --topic event-created --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+kafka-topics --create --topic user-registered-event --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+kafka-topics --create --topic event-capacity-reached --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+```
+
+**Windows:**
+```cmd
+kafka-topics.bat --create --topic user-created --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+kafka-topics.bat --create --topic event-created --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+kafka-topics.bat --create --topic user-registered-event --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+kafka-topics.bat --create --topic event-capacity-reached --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+```
+
+### 3. Start Ollama
+
+```bash
+ollama serve
+```
+
+### 4. Start All Microservices
+
+Open 5 separate terminals and run:
+
+```bash
+# Terminal 1 - User API
+cd services/user-api
+mvn spring-boot:run
+
+# Terminal 2 - Event API
+cd services/event-api
+mvn spring-boot:run
+
+# Terminal 3 - Activity API
+cd services/activity-api
+mvn spring-boot:run
+
+# Terminal 4 - Personalise API
+cd services/personalise-api
+mvn spring-boot:run
+
+# Terminal 5 - Client API (Gateway)
+cd services/client-api
+mvn spring-boot:run
+```
+
+### 5. Verify It's Running
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
+Should return: `{"status":"UP"}`
+
+**Access Swagger UI:** http://localhost:8080/swagger-ui.html
+
+---
+
+## Use Cases
+
+### Use Case 1: Create and Manage Events
+
+**1. Create a user:**
+```bash
+curl -X POST http://localhost:8080/users/signup \
   -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","email":"john@example.com","password":"password123"}'
+  -d '{"name": "Alice", "email": "alice@example.com", "password": "pass123"}'
 ```
+Response: `"1"` (your user ID)
 
-**Login:**
+**2. Create an event:**
 ```bash
-curl -X POST http://localhost:8080/api/v1/login \
+curl -X POST http://localhost:8080/events \
   -H "Content-Type: application/json" \
-  -d '{"email":"john@example.com","password":"password123"}'
+  -H "Authorization: 1" \
+  -d '{
+    "title": "AI Workshop",
+    "description": "Learn AI",
+    "location": "Room 301",
+    "startTime": "2025-11-15T14:00:00",
+    "endTime": "2025-11-15T17:00:00",
+    "maxParticipants": 30
+  }'
+```
+Response: Event ID (save this)
+
+**3. View all events:**
+```bash
+curl http://localhost:8080/events
 ```
 
-**Get account details:**
+**4. Register for an event:**
 ```bash
-curl -X GET http://localhost:8080/api/v1/account \
+curl -X POST "http://localhost:8080/events/{EVENT_ID}/register" \
   -H "Authorization: 1"
 ```
 
-### Running the Services
+---
 
-1. **Start User API (Port 8081):**
+### Use Case 2: AI-Powered Event Assistant
+
+**Get AI summary of your events:**
 ```bash
-cd services/user-api
-mvn spring-boot:run
+curl http://localhost:8080/api/v1/my-events -H "Authorization: 1"
 ```
 
-2. **Start Client API (Port 8080):**
+**Chat with AI:**
 ```bash
-cd services/client-api  
-mvn spring-boot:run
+curl -X POST http://localhost:8080/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: 1" \
+  -d '{"message": "How many events have I created?"}'
 ```
 
-### Database
+**Get AI recommendations:**
+```bash
+curl http://localhost:8080/api/v1/recommended-events -H "Authorization: 1"
+```
 
-Both services use H2 in-memory database with sample data pre-loaded for testing.
+---
+
+### Use Case 3: Real-Time Analytics
+
+**Check trending events:**
+```bash
+curl http://localhost:8082/api/v1/analytics/trending-events
+```
+
+**Check event capacity:**
+```bash
+curl http://localhost:8082/api/v1/analytics/capacity-status
+```
+
+**Get platform statistics:**
+```bash
+curl http://localhost:8082/api/v1/analytics/global-stats
+```
+
+**View your activity log:**
+```bash
+curl http://localhost:8080/activity/my-activity -H "Authorization: 1"
+```
+
+---
+
+## Quick Test
+
+For easy testing, use **Swagger UI**: http://localhost:8080/swagger-ui.html
+- Click "Authorize" and enter your user ID
+- Try any endpoint with the "Try it out" button
+
+---
+
+## Service Ports
+
+| Service | Port |
+|---------|------|
+| Client API (Gateway) | 8080 |
+| User API | 8081 |
+| Event API | 8082 |
+| Activity API | 8083 |
+| Personalise API | 8084 |
+
+---
+
+## Troubleshooting
+
+**Kafka not starting:**
+```bash
+# macOS
+brew services restart kafka
+brew services restart zookeeper
+```
+
+**Port in use:**
+```bash
+# macOS/Linux
+lsof -i :8080
+kill -9 <PID>
+
+# Windows
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+```
+
+**Services fail to start:**
+```bash
+# Check Java version (must be 21)
+java -version
+
+# Rebuild
+cd services/<service-name>
+mvn clean install
+```
+
+---
+
+## Technology Stack
+
+- **Spring Boot 3.3.2** - Microservices framework
+- **Apache Kafka** - Event-driven messaging
+- **Spring Cloud Stream** - Stream processing
+- **LangChain4j** - AI agent framework
+- **Ollama (llama3.1:8b)** - Local LLM
+- **H2 Database** - Data storage
+- **Java 21** - Programming language
+
+---
+
+## What This Does
+
+1. **Event-Driven Architecture** - Services communicate via Kafka events
+2. **Real-Time Stream Processing** - Live analytics on registrations and trending events
+3. **AI Agent** - LLM that autonomously answers questions and makes recommendations
+4. **Microservices** - 5 independent services working together
+5. **Interactive API** - Full Swagger documentation for easy testing

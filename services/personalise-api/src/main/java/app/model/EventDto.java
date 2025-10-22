@@ -2,57 +2,20 @@ package app.model;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.persistence.*;
 
-@Entity
-@Table(name = "events")
 public class EventDto {
-    @Id
     private String id;
-
-    @Column(nullable = false)
     private String title;
-
-    @Column(length = 1000)
     private String description;
-
     private String location;
-
-    @Column(nullable = false)
     private OffsetDateTime startTime;
-
-    @Column(nullable = false)
     private OffsetDateTime endTime;
-
-    @Column(nullable = false)
     private String createdBy;
-
-    @Column(nullable = false)
     private int maxParticipants;
-
-    @Column(nullable = false)
     private int currentParticipants;
-
-    @Transient
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<String> userIds;
 
     public EventDto() {}
-
-    public EventDto(String id, String title, String description, String location,
-                   OffsetDateTime startTime, OffsetDateTime endTime, String createdBy,
-                   int maxParticipants, int currentParticipants) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.location = location;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.createdBy = createdBy;
-        this.maxParticipants = maxParticipants;
-        this.currentParticipants = currentParticipants;
-    }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -83,4 +46,12 @@ public class EventDto {
 
     public List<String> getUserIds() { return userIds; }
     public void setUserIds(List<String> userIds) { this.userIds = userIds; }
+
+    @Override
+    public String toString() {
+        return "Event{id='" + id + "', title='" + title + "', description='" + description +
+               "', location='" + location + "', startTime=" + startTime + ", endTime=" + endTime +
+               ", createdBy='" + createdBy + "', maxParticipants=" + maxParticipants +
+               ", currentParticipants=" + currentParticipants + "}";
+    }
 }

@@ -1,7 +1,12 @@
 server:
-  port: 8084
+  port: 8082
+  servlet:
+    context-path: /
 
 spring:
+  application:
+    name: event-api
+
   h2:
     console:
       enabled: true
@@ -30,14 +35,8 @@ spring:
       properties:
         spring.json.add.type.headers: false
     consumer:
-      group-id: personalise-service-group
+      group-id: event-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
         spring.json.trusted.packages: "*"
-
-logging:
-  level:
-    root: INFO
-    app: DEBUG
-    org.springframework.web: DEBUG

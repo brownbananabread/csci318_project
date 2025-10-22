@@ -7,7 +7,7 @@ spring:
       enabled: true
   
   datasource:
-    url: jdbc:h2:tcp://localhost:9092/mydb
+    url: jdbc:h2:tcp://localhost:9082/mydb
     driver-class-name: org.h2.Driver
     username: jacob
     password: password
@@ -20,3 +20,18 @@ spring:
   jackson:
     serialization:
       indent-output: true
+
+  # Kafka configuration for event-driven architecture
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: user-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"

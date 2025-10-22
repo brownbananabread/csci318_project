@@ -6,7 +6,10 @@ import org.springframework.web.bind.annotation.*;
 
 import app.model.UserEntity;
 import app.repository.UserRepository;
+import app.publisher.UserEventPublisher;
+import app.events.UserCreatedEvent;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -14,9 +17,11 @@ import java.util.Optional;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final UserEventPublisher userEventPublisher;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, UserEventPublisher userEventPublisher) {
         this.userRepository = userRepository;
+        this.userEventPublisher = userEventPublisher;
     }
 
     @GetMapping("/user")
@@ -46,6 +51,16 @@ public class UserController {
                 return ResponseEntity.badRequest().build();
             }
             UserEntity savedUserEntity = userRepository.save(user);
+
+            // Publish domain event for event-driven architecture
+            UserCreatedEvent event = new UserCreatedEvent(
+                savedUserEntity.getId().toString(),
+                savedUserEntity.getEmail(),
+                savedUserEntity.getName(),
+                OffsetDateTime.now()
+            );
+            userEventPublisher.publishUserCreated(event);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUserEntity.getId().toString());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

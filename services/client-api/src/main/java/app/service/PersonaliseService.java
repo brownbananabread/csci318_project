@@ -71,4 +71,52 @@ public class PersonaliseService {
             throw new ServiceException("Failed to process chat request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    public Map<String, Object> processMyEvents(String userId) throws ServiceException {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", userId);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = (Map<String, Object>) restTemplate.exchange(
+                PERSONALISE_API_BASE + "/api/v1/my-events",
+                org.springframework.http.HttpMethod.GET,
+                entity,
+                Map.class
+            ).getBody();
+
+            if (response != null) {
+                return response;
+            }
+
+            return new HashMap<>();
+        } catch (Exception e) {
+            throw new ServiceException("Failed to retrieve my events: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public Map<String, Object> processRecommendedEvents(String userId) throws ServiceException {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", userId);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = (Map<String, Object>) restTemplate.exchange(
+                PERSONALISE_API_BASE + "/api/v1/recommended-events",
+                org.springframework.http.HttpMethod.GET,
+                entity,
+                Map.class
+            ).getBody();
+
+            if (response != null) {
+                return response;
+            }
+
+            return new HashMap<>();
+        } catch (Exception e) {
+            throw new ServiceException("Failed to retrieve recommended events: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

@@ -2,40 +2,51 @@ package app.service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import app.exception.ServiceException;
 import app.model.EventDto;
+import app.model.EventRegistration;
+import app.repository.EventRepository;
+import app.repository.EventRegistrationRepository;
+import app.publisher.EventEventPublisher;
+import app.events.EventCreatedEvent;
+import app.events.UserRegisteredForEventEvent;
+import app.events.EventCapacityReachedEvent;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.UUID;
-import java.time.OffsetDateTime;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
 
-    private final Map<String, EventDto> events = new HashMap<>();
-    private final Map<String, List<String>> userEventRegistrations = new HashMap<>();
+    private final EventRepository eventRepository;
+    private final EventRegistrationRepository registrationRepository;
+    private final EventEventPublisher eventPublisher;
+
+    public EventService(EventRepository eventRepository,
+                       EventRegistrationRepository registrationRepository,
+                       EventEventPublisher eventPublisher) {
+        this.eventRepository = eventRepository;
+        this.registrationRepository = registrationRepository;
+        this.eventPublisher = eventPublisher;
+    }
 
     public List<EventDto> getAllEvents() {
-        return new ArrayList<>(events.values());
+        return eventRepository.findAll();
     }
 
     public EventDto getEvent(String eventId) {
-        EventDto event = events.get(eventId);
-        if (event == null) {
-            throw new ServiceException("Event not found", HttpStatus.NOT_FOUND);
-        }
+        EventDto event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ServiceException("Event not found", HttpStatus.NOT_FOUND));
 
         EventDto eventWithUsers = copyEvent(event);
-        List<String> registeredUsers = new ArrayList<>();
-
-        for (Map.Entry<String, List<String>> entry : userEventRegistrations.entrySet()) {
-            if (entry.getValue().contains(eventId)) {
-                registeredUsers.add(entry.getKey());
-            }
-        }
+        List<String> registeredUsers = registrationRepository.findByEventId(eventId)
+            .stream()
+            .map(EventRegistration::getUserId)
+            .collect(Collectors.toList());
 
         eventWithUsers.setUserIds(registeredUsers);
         return eventWithUsers;
@@ -47,15 +58,28 @@ public class EventService {
         event.setCreatedBy(userId);
         event.setCurrentParticipants(0);
 
-        events.put(eventId, event);
+        EventDto savedEvent = eventRepository.save(event);
+
+        // Publish domain event for event-driven architecture
+        EventCreatedEvent createdEvent = new EventCreatedEvent(
+            savedEvent.getId(),
+            savedEvent.getTitle(),
+            savedEvent.getDescription(),
+            savedEvent.getLocation(),
+            savedEvent.getCreatedBy(),
+            savedEvent.getMaxParticipants(),
+            savedEvent.getStartTime(),
+            savedEvent.getEndTime(),
+            OffsetDateTime.now()
+        );
+        eventPublisher.publishEventCreated(createdEvent);
+
         return eventId;
     }
 
     public void updateEvent(String userId, String eventId, EventDto updatedEvent) {
-        EventDto existingEvent = events.get(eventId);
-        if (existingEvent == null) {
-            throw new ServiceException("Event not found", HttpStatus.NOT_FOUND);
-        }
+        EventDto existingEvent = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ServiceException("Event not found", HttpStatus.NOT_FOUND));
 
         if (!existingEvent.getCreatedBy().equals(userId)) {
             throw new ServiceException("You can only modify events you created", HttpStatus.FORBIDDEN);
@@ -80,35 +104,28 @@ public class EventService {
             existingEvent.setMaxParticipants(updatedEvent.getMaxParticipants());
         }
 
-        events.put(eventId, existingEvent);
+        eventRepository.save(existingEvent);
     }
 
+    @Transactional
     public void deleteEvent(String userId, String eventId) {
-        EventDto event = events.get(eventId);
-        if (event == null) {
-            throw new ServiceException("Event not found", HttpStatus.NOT_FOUND);
-        }
+        EventDto event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ServiceException("Event not found", HttpStatus.NOT_FOUND));
 
         if (!event.getCreatedBy().equals(userId)) {
             throw new ServiceException("You can only delete events you created", HttpStatus.FORBIDDEN);
         }
 
-        events.remove(eventId);
-
-        for (List<String> userEvents : userEventRegistrations.values()) {
-            userEvents.remove(eventId);
-        }
+        registrationRepository.deleteByEventId(eventId);
+        eventRepository.deleteById(eventId);
     }
 
+    @Transactional
     public void registerForEvent(String userId, String eventId) {
-        EventDto event = events.get(eventId);
-        if (event == null) {
-            throw new ServiceException("Event not found", HttpStatus.NOT_FOUND);
-        }
+        EventDto event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ServiceException("Event not found", HttpStatus.NOT_FOUND));
 
-        List<String> userEvents = userEventRegistrations.computeIfAbsent(userId, k -> new ArrayList<>());
-
-        if (userEvents.contains(eventId)) {
+        if (registrationRepository.findByUserIdAndEventId(userId, eventId).isPresent()) {
             throw new ServiceException("Already registered for this event", HttpStatus.CONFLICT);
         }
 
@@ -116,43 +133,64 @@ public class EventService {
             throw new ServiceException("Event is at maximum capacity", HttpStatus.CONFLICT);
         }
 
-        userEvents.add(eventId);
+        EventRegistration registration = new EventRegistration(userId, eventId);
+        registrationRepository.save(registration);
+
         event.setCurrentParticipants(event.getCurrentParticipants() + 1);
-        events.put(eventId, event);
+        eventRepository.save(event);
+
+        // Publish domain event for user registration
+        UserRegisteredForEventEvent registeredEvent = new UserRegisteredForEventEvent(
+            userId,
+            eventId,
+            event.getTitle(),
+            event.getCurrentParticipants(),
+            event.getMaxParticipants(),
+            OffsetDateTime.now()
+        );
+        eventPublisher.publishUserRegisteredForEvent(registeredEvent);
+
+        // Check if event reached capacity and publish event if so
+        if (event.getCurrentParticipants() >= event.getMaxParticipants()) {
+            EventCapacityReachedEvent capacityEvent = new EventCapacityReachedEvent(
+                eventId,
+                event.getTitle(),
+                event.getMaxParticipants(),
+                OffsetDateTime.now()
+            );
+            eventPublisher.publishEventCapacityReached(capacityEvent);
+        }
     }
 
+    @Transactional
     public void deregisterFromEvent(String userId, String eventId) {
-        EventDto event = events.get(eventId);
-        if (event == null) {
-            throw new ServiceException("Event not found", HttpStatus.NOT_FOUND);
-        }
+        EventDto event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new ServiceException("Event not found", HttpStatus.NOT_FOUND));
 
-        List<String> userEvents = userEventRegistrations.get(userId);
-        if (userEvents == null || !userEvents.contains(eventId)) {
-            throw new ServiceException("Not registered for this event", HttpStatus.CONFLICT);
-        }
+        EventRegistration registration = registrationRepository.findByUserIdAndEventId(userId, eventId)
+            .orElseThrow(() -> new ServiceException("Not registered for this event", HttpStatus.CONFLICT));
 
-        userEvents.remove(eventId);
+        registrationRepository.delete(registration);
+
         event.setCurrentParticipants(Math.max(0, event.getCurrentParticipants() - 1));
-        events.put(eventId, event);
+        eventRepository.save(event);
     }
 
     public List<EventDto> getUserEvents(String userId) {
-        return events.values().stream()
-                .filter(event -> event.getCreatedBy().equals(userId))
-                .toList();
+        return eventRepository.findByCreatedBy(userId);
     }
 
     public List<EventDto> getRegisteredEvents(String userId) {
-        List<String> userEventIds = userEventRegistrations.get(userId);
-        if (userEventIds == null) {
+        List<String> eventIds = registrationRepository.findByUserId(userId)
+            .stream()
+            .map(EventRegistration::getEventId)
+            .collect(Collectors.toList());
+
+        if (eventIds.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return userEventIds.stream()
-                .map(events::get)
-                .filter(event -> event != null)
-                .toList();
+        return eventRepository.findAllById(eventIds);
     }
 
     private EventDto copyEvent(EventDto original) {

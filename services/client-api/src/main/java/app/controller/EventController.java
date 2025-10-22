@@ -1,5 +1,11 @@
 package app.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -15,6 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/events")
+@Tag(name = "Events", description = "Event management and registration")
 public class EventController {
 
     private final EventService eventService;
@@ -25,6 +32,11 @@ public class EventController {
         this.activityService = activityService;
     }
 
+    @Operation(summary = "Get all events", description = "Retrieve all available events")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Events retrieved successfully"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping()
     public ResponseEntity<?> getAllEvents() {
         String path = "/events";
@@ -55,8 +67,20 @@ public class EventController {
         }
     }
 
+    @Operation(
+        summary = "Create new event",
+        description = "Create a new event (requires authentication)",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Event created successfully"),
+        @ApiResponse(responseCode = "503", description = "Service temporarily unavailable")
+    })
     @PostMapping()
-    public ResponseEntity<?> createEvent(@RequestHeader(value = "Authorization", required = true) String token, @RequestBody EventDto event) {
+    public ResponseEntity<?> createEvent(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token,
+            @RequestBody EventDto event) {
         String path = "/events";
         try {
             String eventId = eventService.createEvent(token, event);
@@ -68,8 +92,17 @@ public class EventController {
         }
     }
 
+    @Operation(
+        summary = "Update event",
+        description = "Update an existing event (requires authentication and ownership)",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PatchMapping("/{eventId}")
-    public ResponseEntity<?> updateEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId, @RequestBody EventDto event) {
+    public ResponseEntity<?> updateEvent(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token,
+            @PathVariable String eventId,
+            @RequestBody EventDto event) {
         String path = "/events/" + eventId;
 
         try {
@@ -82,8 +115,16 @@ public class EventController {
         }
     }
 
+    @Operation(
+        summary = "Delete event",
+        description = "Delete an event (requires authentication and ownership)",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
     @DeleteMapping("/{eventId}")
-    public ResponseEntity<?> deleteEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId) {
+    public ResponseEntity<?> deleteEvent(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token,
+            @PathVariable String eventId) {
         String path = "/events/" + eventId;
 
         try {
@@ -96,8 +137,21 @@ public class EventController {
         }
     }
 
+    @Operation(
+        summary = "Register for event",
+        description = "Register the current user for an event",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully registered"),
+        @ApiResponse(responseCode = "503", description = "Service temporarily unavailable")
+    })
     @PostMapping("/{eventId}/register")
-    public ResponseEntity<?> registerForEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId) {
+    public ResponseEntity<?> registerForEvent(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token,
+            @Parameter(description = "Event ID", required = true)
+            @PathVariable String eventId) {
         String path = "/events/" + eventId + "/register";
 
         try {
@@ -110,8 +164,16 @@ public class EventController {
         }
     }
 
+    @Operation(
+        summary = "Deregister from event",
+        description = "Remove registration from an event",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
     @DeleteMapping("/{eventId}/register")
-    public ResponseEntity<?> deregisterFromEvent(@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String eventId) {
+    public ResponseEntity<?> deregisterFromEvent(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token,
+            @PathVariable String eventId) {
         String path = "/events/" + eventId + "/register";
 
         try {
@@ -124,8 +186,15 @@ public class EventController {
         }
     }
 
+    @Operation(
+        summary = "Get my created events",
+        description = "Get all events created by the current user",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
     @GetMapping("/my-events")
-    public ResponseEntity<?> getUserEvents(@RequestHeader(value = "Authorization", required = true) String token) {
+    public ResponseEntity<?> getUserEvents(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token) {
         String path = "/my-events";
 
         try {
@@ -138,8 +207,15 @@ public class EventController {
         }
     }
 
+    @Operation(
+        summary = "Get registered events",
+        description = "Get all events the current user has registered for",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
     @GetMapping("/registered")
-    public ResponseEntity<?> getRegisteredEvents(@RequestHeader(value = "Authorization", required = true) String token) {
+    public ResponseEntity<?> getRegisteredEvents(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token) {
         String path = "/registered";
 
         try {

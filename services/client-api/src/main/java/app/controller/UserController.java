@@ -1,5 +1,14 @@
 package app.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -14,6 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
+@Tag(name = "Users", description = "User authentication and account management")
 public class UserController {
 
     private final UserService userService;
@@ -24,8 +34,48 @@ public class UserController {
         this.activityService = activityService;
     }
 
+    @Operation(summary = "Sign up a new user", description = "Create a new user account")
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "User created successfully",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = """
+                    {
+                      "path": "/users/signup",
+                      "status": 201,
+                      "message": "User signed up successfully",
+                      "data": {
+                        "accessToken": "1"
+                      },
+                      "timestamp": "2025-10-22T22:00:00+11:00"
+                    }
+                    """
+                )
+            )
+        ),
+        @ApiResponse(responseCode = "503", description = "Service temporarily unavailable")
+    })
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody UserDto user) {
+    public ResponseEntity<?> signup(
+            @RequestBody(
+                description = "User signup details",
+                content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                        value = """
+                        {
+                          "email": "john.doe@example.com",
+                          "password": "mySecurePassword123",
+                          "name": "John Doe"
+                        }
+                        """
+                    )
+                )
+            )
+            @org.springframework.web.bind.annotation.RequestBody UserDto user) {
         String path = "/users/signup";
 
         try {
@@ -38,8 +88,48 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "User login", description = "Authenticate user and return access token")
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Login successful",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = """
+                    {
+                      "path": "/users/login",
+                      "status": 200,
+                      "message": "User logged in successfully",
+                      "data": {
+                        "accessToken": "1"
+                      },
+                      "timestamp": "2025-10-22T22:00:00+11:00"
+                    }
+                    """
+                )
+            )
+        ),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+        @ApiResponse(responseCode = "503", description = "Service temporarily unavailable")
+    })
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserDto user) {
+    public ResponseEntity<?> login(
+            @RequestBody(
+                description = "User login credentials",
+                content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                        value = """
+                        {
+                          "email": "john.doe@example.com",
+                          "password": "mySecurePassword123"
+                        }
+                        """
+                    )
+                )
+            )
+            @org.springframework.web.bind.annotation.RequestBody UserDto user) {
         String path = "/users/login";
 
         try {
@@ -54,8 +144,20 @@ public class UserController {
         }
     }
 
+    @Operation(
+        summary = "Update user account",
+        description = "Update current user's account information",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Account updated successfully"),
+        @ApiResponse(responseCode = "503", description = "Service temporarily unavailable")
+    })
     @PatchMapping("/update-account")
-    public ResponseEntity<?> updateAccount(@RequestHeader(value = "Authorization", required = true) String token, @RequestBody UserDto user) {
+    public ResponseEntity<?> updateAccount(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token,
+            @RequestBody UserDto user) {
         String path = "/users/update-account";
         
         try {
@@ -68,8 +170,19 @@ public class UserController {
         }
     }
 
+    @Operation(
+        summary = "Delete user account",
+        description = "Delete current user's account",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Account deleted successfully"),
+        @ApiResponse(responseCode = "503", description = "Service temporarily unavailable")
+    })
     @DeleteMapping("/delete-account")
-    public ResponseEntity<?> removeAccount(@RequestHeader(value = "Authorization", required = true) String token) {
+    public ResponseEntity<?> removeAccount(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String token) {
         String path = "/users/delete-account";
 
         try {
@@ -82,8 +195,19 @@ public class UserController {
         }
     }
 
+    @Operation(
+        summary = "Get user account details",
+        description = "Retrieve current user's account information",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Account retrieved successfully"),
+        @ApiResponse(responseCode = "503", description = "Service temporarily unavailable")
+    })
     @GetMapping("/account")
-    public ResponseEntity<?> getAccount(@RequestHeader(value = "Authorization", required = true) String accessToken) {
+    public ResponseEntity<?> getAccount(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = true) String accessToken) {
         String path = "/users/account";
 
         try {

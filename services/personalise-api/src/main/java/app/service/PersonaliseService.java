@@ -9,10 +9,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
 import app.exception.ServiceException;
+import app.agent.EventAgent;
+import app.context.UserContext;
 
-import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -23,17 +25,14 @@ public class PersonaliseService {
 
     private final RestTemplate restTemplate;
     private final OllamaChatModel chatModel;
+    private final EventAgent eventAgent;
 
     private static final String CLIENT_API_BASE = "http://localhost:8080";
 
-    public PersonaliseService(RestTemplate restTemplate) {
+    public PersonaliseService(RestTemplate restTemplate, OllamaChatModel chatModel, EventAgent eventAgent) {
         this.restTemplate = restTemplate;
-
-        // Initialize Ollama model - using local Ollama instance
-        this.chatModel = OllamaChatModel.builder()
-                .baseUrl("http://localhost:11434")
-                .modelName("llama3.1:8b")
-                .build();
+        this.chatModel = chatModel;
+        this.eventAgent = eventAgent;
     }
 
     public Map<String, Object> processSummary(String userId) throws ServiceException {
@@ -66,40 +65,28 @@ public class PersonaliseService {
                 throw new ServiceException("Message is required", HttpStatus.BAD_REQUEST);
             }
 
-            // Fetch user details via client API
-            Map<String, Object> userDetails = fetchUserDetails(userId);
+            // Set user context for tools to access
+            UserContext.setUserId(userId);
 
-            // Fetch user's own events via client API
-            List<Map<String, Object>> userEvents = fetchUserEvents(userId);
+            try {
+                // Use the AI agent which will autonomously decide which tools to call
+                // based on the user's question. For example:
+                // - "How many events have I created?" -> calls getUserCreatedEvents
+                // - "What events am I attending?" -> calls getUserRegisteredEvents
+                // - "What events are available?" -> calls getAllEvents
+                // - "Tell me about myself" -> calls getUserDetails
+                // This demonstrates autonomous tool selection based on context
 
-            // Fetch events user is registered for via client API
-            List<Map<String, Object>> registeredEvents = fetchRegisteredEvents(userId);
+                String response = eventAgent.chat(message);
 
-            // Build context for Gemini
-            StringBuilder context = new StringBuilder();
-            context.append("User Information:\n");
-            if (userDetails.containsKey("name")) {
-                context.append("Name: ").append(userDetails.get("name")).append("\n");
+                return Map.of(
+                    "message", message,
+                    "response", response,
+                    "agenticBehavior", "The AI agent autonomously selected which tools to call based on your question"
+                );
+            } finally {
+                UserContext.clear();
             }
-            if (userDetails.containsKey("email")) {
-                context.append("Email: ").append(userDetails.get("email")).append("\n");
-            }
-            context.append("\nUser's Events: ").append(userEvents.size()).append(" events\n");
-            context.append("Registered Events: ").append(registeredEvents.size()).append(" events\n");
-            context.append("\nUser's message: ").append(message).append("\n");
-            context.append("\nPlease respond as a helpful assistant with knowledge of the user's event management system.");
-
-            // Send to Gemini
-            UserMessage userMessage = UserMessage.from(context.toString());
-            AiMessage response = chatModel.generate(userMessage).content();
-
-            return Map.of(
-                "message", message,
-                "response", response.text(),
-                "userDetails", userDetails,
-                "eventCount", userEvents.size(),
-                "registeredEventCount", registeredEvents.size()
-            );
 
         } catch (Exception e) {
             throw new ServiceException("Failed to process chat request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -181,6 +168,67 @@ public class PersonaliseService {
         } catch (Exception e) {
             // Return empty list if client API is not available
             return List.of();
+        }
+    }
+
+    public Map<String, Object> processMyEvents(String userId) throws ServiceException {
+        try {
+            // Set user context for tools to access
+            UserContext.setUserId(userId);
+
+            try {
+                // Use the AI agent which will autonomously:
+                // 1. Decide it needs user details, created events, and registered events
+                // 2. Call the appropriate tools (getUserDetails, getUserCreatedEvents, getUserRegisteredEvents)
+                // 3. Analyze the results
+                // 4. Generate a personalized summary
+                // This demonstrates true agentic behavior with autonomous tool selection and multi-step reasoning
+
+                String summary = eventAgent.summarizeMyEvents(
+                    "Please provide a comprehensive summary of my event activity."
+                );
+
+                return Map.of(
+                    "summary", summary,
+                    "agenticBehavior", "The AI agent autonomously decided which tools to call and synthesized the results"
+                );
+            } finally {
+                UserContext.clear();
+            }
+
+        } catch (Exception e) {
+            throw new ServiceException("Failed to process my-events request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public Map<String, Object> processRecommendedEvents(String userId) throws ServiceException {
+        try {
+            // Set user context for tools to access
+            UserContext.setUserId(userId);
+
+            try {
+                // Use the AI agent which will autonomously:
+                // 1. Fetch the user's registered events to understand their interests
+                // 2. Fetch all available events
+                // 3. Compare and analyze the events
+                // 4. Select relevant events NOT already registered for
+                // 5. Generate personalized recommendations with reasoning
+                // This demonstrates multi-step reasoning and complex decision-making
+
+                String recommendations = eventAgent.recommendEvents(
+                    "Please recommend events I should attend based on my interests."
+                );
+
+                return Map.of(
+                    "recommendations", recommendations,
+                    "agenticBehavior", "The AI agent autonomously analyzed your interests and all available events to make personalized recommendations"
+                );
+            } finally {
+                UserContext.clear();
+            }
+
+        } catch (Exception e) {
+            throw new ServiceException("Failed to process recommended-events request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
