@@ -12,7 +12,6 @@ import app.publisher.EventEventPublisher;
 import app.events.EventCreatedEvent;
 import app.events.UserRegisteredForEventEvent;
 import app.events.EventCapacityReachedEvent;
-
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.ArrayList;

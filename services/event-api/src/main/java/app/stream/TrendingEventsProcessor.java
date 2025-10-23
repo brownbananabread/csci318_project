@@ -13,15 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 
-/**
- * Stream processor that tracks trending events in real-time.
- * Analyzes event registration patterns to identify popular events.
- *
- * This demonstrates stream processing capabilities for event-driven architecture:
- * - Real-time windowed aggregation (5-minute windows)
- * - Event popularity scoring
- * - Trending event detection
- */
 @Component
 public class TrendingEventsProcessor {
     private static final Logger logger = LoggerFactory.getLogger(TrendingEventsProcessor.class);
@@ -37,10 +28,6 @@ public class TrendingEventsProcessor {
         this.objectMapper = new ObjectMapper();
     }
 
-    /**
-     * Processes user registration events to detect trending events.
-     * Uses a 5-minute sliding window to count registrations per event.
-     */
     @KafkaListener(topics = "user-registered-event", groupId = "trending-processor-group")
     public void processRegistration(String message) {
         try {
@@ -84,9 +71,6 @@ public class TrendingEventsProcessor {
         }
     }
 
-    /**
-     * Represents a time window for tracking event registrations.
-     */
     private static class EventWindow {
         private final String eventId;
         private final String eventTitle;
@@ -124,9 +108,6 @@ public class TrendingEventsProcessor {
         }
     }
 
-    /**
-     * Returns current trending events (for API endpoint exposure).
-     */
     public Map<String, Integer> getTrendingEvents() {
         Map<String, Integer> trending = new ConcurrentHashMap<>();
         eventWindows.forEach((eventId, window) -> {

@@ -6,22 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Real-time event analytics stream processor.
- * Computes aggregated statistics from event streams for analytics dashboards.
- *
- * Stream Processing Use Case #3:
- * - Total registrations per event (all-time)
- * - Registration velocity (registrations per minute)
- * - Most active events by registration rate
- */
 @Component
 public class EventAnalyticsProcessor {
     private static final Logger logger = LoggerFactory.getLogger(EventAnalyticsProcessor.class);
@@ -37,9 +27,6 @@ public class EventAnalyticsProcessor {
         this.objectMapper = new ObjectMapper();
     }
 
-    /**
-     * Processes event creation events to track total events created.
-     */
     @KafkaListener(topics = "event-created", groupId = "analytics-processor-group")
     public void processEventCreated(String message) {
         try {
@@ -63,9 +50,6 @@ public class EventAnalyticsProcessor {
         }
     }
 
-    /**
-     * Processes registration events to compute real-time statistics.
-     */
     @KafkaListener(topics = "user-registered-event", groupId = "analytics-processor-group")
     public void processRegistration(String message) {
         try {
@@ -94,9 +78,6 @@ public class EventAnalyticsProcessor {
         }
     }
 
-    /**
-     * Processes capacity reached events.
-     */
     @KafkaListener(topics = "event-capacity-reached", groupId = "analytics-processor-group")
     public void processCapacityReached(String message) {
         try {
@@ -116,9 +97,6 @@ public class EventAnalyticsProcessor {
         }
     }
 
-    /**
-     * Real-time analytics for a single event.
-     */
     private static class EventAnalytics {
         private final String eventId;
         private final String eventTitle;
@@ -183,9 +161,6 @@ public class EventAnalyticsProcessor {
         }
     }
 
-    /**
-     * Returns real-time analytics for all events.
-     */
     public Map<String, Map<String, Object>> getEventAnalytics() {
         Map<String, Map<String, Object>> result = new ConcurrentHashMap<>();
 
@@ -203,9 +178,6 @@ public class EventAnalyticsProcessor {
         return result;
     }
 
-    /**
-     * Returns global analytics summary.
-     */
     public Map<String, Object> getGlobalAnalytics() {
         Map<String, Object> summary = new ConcurrentHashMap<>();
         summary.put("totalEventsCreated", totalEventsCreated.get());

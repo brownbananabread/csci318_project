@@ -3,10 +3,6 @@ package app.events;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 
-/**
- * Domain event published when a user registers for an event.
- * Enables event-driven notification and analytics.
- */
 public class UserRegisteredForEventEvent implements Serializable {
     private static final long serialVersionUID = 1L;
 

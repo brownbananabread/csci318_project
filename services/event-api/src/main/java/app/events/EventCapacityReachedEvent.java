@@ -3,10 +3,6 @@ package app.events;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 
-/**
- * Domain event published when an event reaches its maximum capacity.
- * Allows other services to react (e.g., send notifications, close registration).
- */
 public class EventCapacityReachedEvent implements Serializable {
     private static final long serialVersionUID = 1L;
 

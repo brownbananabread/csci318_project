@@ -3,10 +3,6 @@ package app.events;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 
-/**
- * Domain event published when a new event is created.
- * Allows other services to react to new events asynchronously.
- */
 public class EventCreatedEvent implements Serializable {
     private static final long serialVersionUID = 1L;
 

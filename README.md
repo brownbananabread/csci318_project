@@ -34,24 +34,20 @@ ollama pull llama3.1:8b
 
 ## Running the Project
 
-### 1. Start Kafka
+### 1. Start Kafka (KRaft Mode - No Zookeeper Needed)
 
 **macOS:**
 ```bash
-brew services start zookeeper
 brew services start kafka
 ```
 
 **Windows:**
 ```cmd
-# Terminal 1 - Zookeeper
-cd C:\kafka
-bin\windows\zookeeper-server-start.bat config\zookeeper.properties
-
-# Terminal 2 - Kafka
 cd C:\kafka
 bin\windows\kafka-server-start.bat config\server.properties
 ```
+
+> **Note:** This project uses Kafka in KRaft mode, which doesn't require Zookeeper. Modern Kafka (2.8+) handles cluster coordination internally.
 
 ### 2. Create Kafka Topics
 
@@ -228,7 +224,6 @@ For easy testing, use **Swagger UI**: http://localhost:8080/swagger-ui.html
 ```bash
 # macOS
 brew services restart kafka
-brew services restart zookeeper
 ```
 
 **Port in use:**

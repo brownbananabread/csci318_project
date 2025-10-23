@@ -5,10 +5,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
-
 import dev.langchain4j.agent.tool.Tool;
 import app.model.EventDto;
-
 import java.util.List;
 import java.util.stream.Collectors;
 

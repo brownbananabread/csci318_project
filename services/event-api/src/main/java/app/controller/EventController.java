@@ -3,11 +3,9 @@ package app.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
-
 import app.exception.ServiceException;
 import app.model.EventDto;
 import app.service.EventService;
-
 import java.util.Map;
 import java.util.List;
 import java.time.OffsetDateTime;

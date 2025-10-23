@@ -7,11 +7,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.ParameterizedTypeReference;
-
 import dev.langchain4j.agent.tool.Tool;
 import app.model.EventDto;
 import app.context.UserContext;
-
 import java.util.List;
 import java.util.stream.Collectors;
 

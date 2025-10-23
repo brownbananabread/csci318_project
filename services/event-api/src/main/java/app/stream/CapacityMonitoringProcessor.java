@@ -6,19 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Stream processor that monitors event capacity in real-time.
- * Tracks registration events and issues alerts when events approach capacity.
- *
- * This demonstrates advanced stream processing for event-driven architecture:
- * - Real-time capacity tracking
- * - Threshold-based alerting (75%, 90%, 100%)
- * - Proactive notification system
- */
 @Component
 public class CapacityMonitoringProcessor {
     private static final Logger logger = LoggerFactory.getLogger(CapacityMonitoringProcessor.class);
@@ -35,10 +25,6 @@ public class CapacityMonitoringProcessor {
         this.objectMapper = new ObjectMapper();
     }
 
-    /**
-     * Monitors user registrations to track event capacity in real-time.
-     * Issues alerts when events reach warning or critical thresholds.
-     */
     @KafkaListener(topics = "user-registered-event", groupId = "capacity-monitor-group")
     public void monitorCapacity(String message) {
         try {
@@ -68,27 +54,17 @@ public class CapacityMonitoringProcessor {
                     eventTitle);
                 capacity.setFullAlertSent(true);
 
-                // In production: send notification, update UI, publish alert event
-                // notificationService.sendFullCapacityAlert(eventId);
-                // kafkaTemplate.send("capacity-alerts", new CapacityFullAlert(...));
-
             } else if (utilizationPercent >= CRITICAL_THRESHOLD * 100
                     && !capacity.isCriticalAlertSent()) {
                 logger.warn("CAPACITY ALERT [CRITICAL]: Event '{}' at {}% capacity (threshold: {}%)",
                     eventTitle, String.format("%.1f", utilizationPercent), CRITICAL_THRESHOLD * 100);
                 capacity.setCriticalAlertSent(true);
 
-                // In production: send notification to event organizer
-                // notificationService.sendCriticalCapacityAlert(eventId, utilizationPercent);
-
             } else if (utilizationPercent >= WARNING_THRESHOLD * 100
                     && !capacity.isWarningAlertSent()) {
                 logger.info("CAPACITY ALERT [WARNING]: Event '{}' at {}% capacity (threshold: {}%)",
                     eventTitle, String.format("%.1f", utilizationPercent), WARNING_THRESHOLD * 100);
                 capacity.setWarningAlertSent(true);
-
-                // In production: send notification to event organizer
-                // notificationService.sendWarningCapacityAlert(eventId, utilizationPercent);
             }
 
         } catch (Exception e) {
@@ -96,9 +72,6 @@ public class CapacityMonitoringProcessor {
         }
     }
 
-    /**
-     * Listens for event capacity reached events.
-     */
     @KafkaListener(topics = "event-capacity-reached", groupId = "capacity-monitor-group")
     public void handleCapacityReached(String message) {
         try {
@@ -109,20 +82,11 @@ public class CapacityMonitoringProcessor {
 
             logger.error("Event '{}' has reached maximum capacity - Registration closed", eventTitle);
 
-            // In production: trigger automated actions
-            // - Close registration UI
-            // - Send confirmation to organizer
-            // - Update event status
-            // eventService.closeRegistration(eventId);
-
         } catch (Exception e) {
             logger.error("Error handling capacity reached event: {}", message, e);
         }
     }
 
-    /**
-     * Represents capacity tracking for a single event.
-     */
     private static class EventCapacity {
         private final String eventId;
         private final String eventTitle;
@@ -174,9 +138,6 @@ public class CapacityMonitoringProcessor {
         }
     }
 
-    /**
-     * Returns current capacity status for all events (for API endpoint exposure).
-     */
     public Map<String, Double> getCapacityStatus() {
         Map<String, Double> status = new ConcurrentHashMap<>();
         eventCapacities.forEach((eventId, capacity) -> {

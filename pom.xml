@@ -10,6 +10,9 @@
     <packaging>pom</packaging>
     <modules>
         <module>services/user-api</module>
+        <module>services/event-api</module>
+        <module>services/activity-api</module>
+        <module>services/personalise-api</module>
         <module>services/client-api</module>
     </modules>
 
